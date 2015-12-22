@@ -1,0 +1,17 @@
+{
+  "name": "vimes",
+  "version": "0.0.1",
+  "description": "gradually typed lisp compiling to js",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "mocha --require source-map-support/register build/test"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "chai": "^3.4.1",
+    "mocha": "^2.3.4",
+    "source-map-support": "^0.4.0"
+  }
+}

@@ -1,0 +1,35 @@
+{
+    "compileOnSave": false,
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "isolatedModules": false,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "declaration": true,
+        "noImplicitAny": false,
+        "sourceMap": true,
+        "removeComments": true,
+        "noLib": false,
+        "preserveConstEnums": true,
+        "suppressImplicitAnyIndexErrors": true,
+        "outDir": "./build"
+    },
+    "filesGlob": [
+        "**/*.ts",
+        "!build/**",
+        "!node_modules/**"
+    ],
+    "files": [
+        "src/data.ts",
+        "src/protocols.ts",
+        "test/protocols_test.ts",
+        "typings/assertion-error/assertion-error.d.ts",
+        "typings/chai/chai.d.ts",
+        "typings/mocha/mocha.d.ts"
+    ],
+    "atom": {
+        "rewriteTsconfig": true
+    }
+}
