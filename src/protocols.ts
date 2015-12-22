@@ -105,9 +105,9 @@ export function implement(fn: ProtocolFunction, prototype, impl: any) {
     throw new Error('not a protocol function');
   }
   if (prototype == null) {
+    if (fn.nilImpl) throw new Error("cannot implement a protocol twice");
     fn.nilImpl = impl;
   } else {
-    console.log()
     Object.defineProperty(
       prototype,
       <any>fn.identity,
