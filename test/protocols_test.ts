@@ -1,4 +1,4 @@
-import { ProtocolFunction, implement } from '../src/protocols';
+import { ProtocolFunction, implement, MultiArityFunction } from '../src/protocols';
 import { expect } from 'chai'
 
 describe('protocols', () => {
@@ -67,5 +67,33 @@ describe('protocols', () => {
 
     implement(str, null, o => o.toString());
     expect(() => implement(str, null, o => o.toString())).to.throw()
+  });
+  it('can have multiple arities', () => {
+    const numArgs = ProtocolFunction([1,2,3,4], 4, 'num-args');
+
+    implement(
+      numArgs,
+      Object.prototype,
+      MultiArityFunction(
+        [ null
+        , () => 1
+        , () => 2
+        , () => 3
+        , () => `>=4`
+        , () => 5
+        ],
+        4,
+        "num-args:Object"
+      )
+    );
+
+    expect(() => numArgs()).to.throw();
+    expect(numArgs(1)).to.equal(1);
+    expect(numArgs('a')).to.equal(1);
+    expect(numArgs('a', 'b')).to.equal(2);
+    expect(numArgs('a', 'b', 3)).to.equal(3);
+    expect(numArgs('a', 'b', 3, 5)).to.equal('>=4');
+    expect(numArgs('a', 'b', 3, 5, 4)).to.equal(5);
+    expect(numArgs('a', 'b', 3, 5, 4, 6)).to.equal('>=4');
   });
 });

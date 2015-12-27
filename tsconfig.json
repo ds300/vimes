@@ -23,8 +23,11 @@
     ],
     "files": [
         "src/data.ts",
+        "src/is.ts",
         "src/protocols.ts",
+        "src/reader.ts",
         "test/protocols_test.ts",
+        "test/reader_test.ts",
         "typings/assertion-error/assertion-error.d.ts",
         "typings/chai/chai.d.ts",
         "typings/mocha/mocha.d.ts"
