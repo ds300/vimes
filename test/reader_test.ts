@@ -43,6 +43,19 @@ describe('readers', () => {
     expect(read('-Infinity')).to.equal(-Infinity);
     expect(read('-Infinity')).to.not.satisfy(isFinite);
   });
+  it('reads characters', () => {
+    expect(read('\\\'')).to.equal("'");
+    expect(read('\\e')).to.equal("e");
+    expect(read('\\\\')).to.equal("\\");
+    expect(read('\\newline')).to.equal("\n");
+    expect(read('\\return')).to.equal("\r");
+    expect(read('\\space')).to.equal(" ");
+    expect(read('\\tab')).to.equal("\t");
+    expect(read('\\formfeed')).to.equal("\f");
+    expect(read('\\backspace')).to.equal("\b");
+    expect(read('\\u0078')).to.equal('x');
+    expect(read('\\o170')).to.equal('x');
+  });
   it('reads booleans and nil', () => {
     expect(read('true')).to.equal(true);
     expect(read('false')).to.equal(false);
@@ -62,10 +75,74 @@ describe('readers', () => {
     expect(read(`[["nested" "yo"]]`))
       .to.satisfy(is(d.vector(d.vector("nested", "yo"))));
   });
-  // it('reads maps', () => {
-  //   throw new Error();
-  // });
-  // it('reads sets', () => {
-  //   throw new Error();
-  // });
+  it('reads maps', () => {
+    expect(read(`{}`)).to.satisfy(is(d.hashMap()));
+    expect(read(`{"hey" true}`)).to.satisfy(is(d.hashMap("hey", true)));
+    expect(read(`{5 6, 7 8}`)).to.satisfy(is(d.hashMap(5, 6, 7, 8)));
+    expect(read(`{5 6, 7 8}`)).to.satisfy(is(d.hashMap(7, 8, 5, 6)));
+  });
+  it('reads sets', () => {
+    expect(read(`#{}`)).to.satisfy(is(d.set()));
+    expect(read(`#{1,2,3,4}`)).to.satisfy(is(d.set(4,3,1,2)));
+    expect(read(`#{1,2,3,4,1,3,2}`)).to.satisfy(is(d.set(4,3,1,2)));
+  });
+  it('reads keywords', () => {
+    expect(read(`:blah`)).to.satisfy(is(d.keyword('blah')));
+    expect(read(`:blah.core/blah`)).to.satisfy(is(d.keyword('blah.core/blah')));
+    expect(() => read(`:blah.core/blah/blah`)).to.throw();
+  });
+  it('reads symbols', () => {
+    expect(read(`blah`)).to.satisfy(is(d.ident('blah')));
+    expect(read(`blah.core/blah`)).to.satisfy(is(d.ident('blah.core/blah')));
+    expect(() => read(`blah.core/blah/blah`)).to.throw();
+  });
+  it('reads regexps', () => {
+    expect(read(`#"i am a regexp"`)).to.eql(/i am a regexp/);
+    expect(read(`#"i am a regexp"gi`)).to.eql(/i am a regexp/gi);
+    expect(read(`#"i am a regexp"gi`)).to.eql(/i am a regexp/ig);
+    expect(read(`#"\\""gi`)).to.eql(/"/ig);
+    expect(read(`#""`)).to.eql(new RegExp('', ''));
+  });
+  it('skips comments', () => {
+    expect(read(`[0;blah\n1]`)).to.satisfy(is(d.vector(0,1)));
+    expect(read(`[;blaaah000\n\n0;blah\n1]`)).to.satisfy(is(d.vector(0,1)));
+    expect(() => read(`[0;bl(ah\n1)]`)).to.throw();
+  });
+  it('quotes things', () => {
+    const quote = d.ident('vimes.core/quote');
+    expect(read(`'things`)).to.satisfy(is(d.list(quote, d.ident('things'))));
+    expect(read(`''things`))
+      .to.satisfy(is(d.list(quote, d.list(quote, d.ident('things')))));
+  });
+  it('syntax-quotes things', () => {
+    const quote = d.ident('vimes.core/syntax-quote');
+    expect(read(`\`things`)).to.satisfy(is(d.list(quote, d.ident('things'))));
+    expect(read(`\`\`things`))
+      .to.satisfy(is(d.list(quote, d.list(quote, d.ident('things')))));
+    expect(read(`\`()`)).to.satisfy(is(d.list(quote, d.list())));
+  });
+  it('unquotes things', () => {
+    const uq = d.ident('vimes.core/unquote');
+    expect(read(`~things`)).to.satisfy(is(d.list(uq, d.ident('things'))));
+    expect(read(`~~things`))
+      .to.satisfy(is(d.list(uq, d.list(uq, d.ident('things')))));
+    expect(read(`~(things)`))
+      .to.satisfy(is(d.list(uq, d.list(d.ident('things')))));
+  });
+  it('unquote-splices things', () => {
+    const uq = d.ident('vimes.core/unquote-splicing');
+    expect(read(`~@things`)).to.satisfy(is(d.list(uq, d.ident('things'))));
+    expect(read(`~@~@things`))
+      .to.satisfy(is(d.list(uq, d.list(uq, d.ident('things')))));
+    expect(read(`~@(things)`))
+      .to.satisfy(is(d.list(uq, d.list(d.ident('things')))));
+  });
+  it('makes things derivations', () => {
+    const uq = d.ident('vimes.core/derivation');
+    expect(read(`!things`)).to.satisfy(is(d.list(uq, d.ident('things'))));
+    expect(read(`!!things`))
+      .to.satisfy(is(d.list(uq, d.list(uq, d.ident('things')))));
+    expect(read(`!(things)`))
+      .to.satisfy(is(d.list(uq, d.list(d.ident('things')))));
+  });
 });

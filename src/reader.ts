@@ -1,8 +1,14 @@
 import * as d from './data';
+import {Keyword} from './data/Keyword';
+import {Ident} from './data/Ident';
+import {ArraySeq} from './data/ArraySeq';
+import {ArrayVector} from './data/ArrayVector';
+import {ArrayMap} from './data/ArrayMap';
+import {ArraySet} from './data/ArraySet';
 
 const EOF = "";
 
-const CONTROL = /[\[\]\{\}\(\)\\"\s,]/
+const CONTROL = /[\[\]\{\}\(\)"\s,;]/
 
 class LispReader {
   line: number = 0;
@@ -65,26 +71,26 @@ class LispReader {
       return parseFloat(sym);
     } else if (sym[0] === ':') {
       if (sym[1] === ':') {
-        if (sym.indexOf('/')) {
+        if (sym.indexOf('/') > -1) {
           throw new Error('invalid token:' + sym);
         }
-        return new d.Keyword(this.namespace, sym.slice(2));
+        return new Keyword(this.namespace, sym.slice(2));
       } else {
         return d.keyword(sym.slice(1));
       }
     } else if (sym[0].match(/\d/)) {
       throw new Error('invalid token: ' + sym);
     } else {
-      return d.symbol(sym);
+      return d.ident(sym);
     }
   }
 
   _readList() {
-    return new d.ArraySeq(this._readSeq(')'), 0);
+    return new ArraySeq(this._readSeq(')'), 0);
   }
 
   _readVector() {
-    return new d.ArrayVector(this._readSeq(']'));
+    return new ArrayVector(this._readSeq(']'));
   }
 
   _readMap() {
@@ -92,11 +98,11 @@ class LispReader {
     if (arr.length % 2 !== 0) {
       throw new Error('map literal must have even number of forms');
     }
-    return new d.ArrayMap(arr);
+    return new ArrayMap(arr);
   }
 
   _readSet() {
-    return new d.ArraySet(this._readSeq('}'));
+    return new ArraySet(this._readSeq('}'));
   }
 
   _readSeq(endDelimiter): any[] {
@@ -169,6 +175,8 @@ class LispReader {
         this.nextChar(true);
         if (this.char !== '"') {
           repr += '\\' + this.char;
+        } else {
+          repr += '"';
         }
       } else {
         repr += this.char;
@@ -178,12 +186,42 @@ class LispReader {
 
     this.nextChar();
     let flags = "";
-    while (!this.char.match(CONTROL)) {
+    while (this.char !== EOF && !this.char.match(CONTROL)) {
       flags += this.char;
       this.nextChar();
     }
 
     return new RegExp(repr, flags);
+  }
+
+  _readChar() {
+    this.nextChar(true);
+    let nm = "";
+    while (this.char !== EOF && !this.char.match(CONTROL)) {
+      nm += this.char;
+      this.nextChar();
+    }
+
+    if (nm.length === 1) {
+      return nm;
+    }
+
+    switch (nm) {
+    case "newline": return `\n`;
+    case "space": return ' ';
+    case "tab": return '\t';
+    case "formfeed": return '\f';
+    case "backspace": return '\b';
+    case "return": return '\r';
+    }
+
+    if (nm.match(/^u[0-9a-fA-F]{4}$/)) {
+      return String.fromCharCode(parseInt(nm.slice(1), 16));
+    } else if (nm.match(/^o[0-8]{3}$/)){
+      return String.fromCharCode(parseInt(nm.slice(1), 8));
+    }
+
+    throw new Error(`invalid char literal '\\${nm}'`);
   }
 
   nextForm(): any {
@@ -211,24 +249,29 @@ class LispReader {
       return this.nextForm();
     case "'":
       this.nextChar(true);
-      return d.list(d.symbol('vimes.core/quote'), this.nextForm());
+      return d.list(d.ident('vimes.core/quote'), this.nextForm());
     case "`":
       this.nextChar(true);
-      return d.list(d.symbol('vimes.core/syntax-quote'), this.nextForm());
+      return d.list(d.ident('vimes.core/syntax-quote'), this.nextForm());
     case "~":
       this.nextChar(true);
       if (this.char === '@') {
         this.nextChar();
-        return d.list(d.symbol('vimes.core/unquote-splicing'), this.nextForm());
+        return d.list(d.ident('vimes.core/unquote-splicing'), this.nextForm());
       }
-      return d.list(d.symbol('vimes.core/unquote'), this.nextForm());
+      return d.list(d.ident('vimes.core/unquote'), this.nextForm());
     case "!":
       this.nextChar(true);
-      return d.list(d.symbol('vimes.core/derivation'), this.nextForm());
+      return d.list(d.ident('vimes.core/derivation'), this.nextForm());
+    case "\\":
+      return this._readChar();
     case "^":
       this.nextChar(true);
       let meta = this.nextForm();
-      return d.list(d.symbol('vimes.core/with-meta'), this.nextForm(), meta);
+      if (meta instanceof Keyword) {
+        meta = d.hashMap(meta, true);
+      }
+      return d.list(d.ident('vimes.core/with-meta'), this.nextForm(), meta);
     case "#":
       this.nextChar(true);
       switch (this.char) {
@@ -237,10 +280,10 @@ class LispReader {
       case '{':
         return this._readSet();
       case '(':
-        return d.list(d.symbol('vimes.core/lambda*'), this._readList());
+        return d.list(d.ident('vimes.core/lambda*'), this._readList());
       case '=':
         this.nextChar(true);
-        return d.list(d.symbol('vimes.core/read-eval'), this.nextForm());
+        return d.list(d.ident('vimes.core/read-eval'), this.nextForm());
       case '_':
         this.nextChar(true);
         this.nextForm();
@@ -255,6 +298,9 @@ class LispReader {
     case EOF:
       throw new Error('unexpected EOF');
     default:
+      if (this.char.match(CONTROL)) {
+        throw new Error('syntax error: ' + this.char);
+      }
       return this._readSymbol();
     }
   }
