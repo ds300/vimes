@@ -1,3 +1,4 @@
+import { show } from '../src/data/proto'
 import { read } from '../src/reader'
 import * as d from '../src/data'
 

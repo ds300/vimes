@@ -1,7 +1,7 @@
-import {Seq} from './interfaces';
+import {Seq, Counted, Nth} from './interfaces';
 import {EMPTY_LIST} from './Cons'
 
-export class ArraySeq<T> implements Seq<T> {
+export class ArraySeq<T> implements Seq<T>, Nth<T>, Counted {
   array: T[]
   index: number;
   constructor(array: T[], index: number) {
@@ -23,6 +23,14 @@ export class ArraySeq<T> implements Seq<T> {
 
   seq() {
     return this.array.length === 0 ? null : this;
+  }
+
+  count() {
+    return this.array.length - this.index;
+  }
+
+  nth(n: number) {
+    return this.array[n+this.index];
   }
 
   toString () {

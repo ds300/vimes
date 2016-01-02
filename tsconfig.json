@@ -22,6 +22,7 @@
         "!node_modules/**"
     ],
     "files": [
+        "src/compiler.ts",
         "src/data.ts",
         "src/data/ArrayMap.ts",
         "src/data/ArraySeq.ts",
@@ -32,9 +33,15 @@
         "src/data/interfaces.ts",
         "src/data/Keyword.ts",
         "src/data/proto.ts",
+        "src/env.ts",
+        "src/gensym.ts",
         "src/is.ts",
+        "src/namespace.ts",
         "src/protocols.ts",
         "src/reader.ts",
+        "src/specials.ts",
+        "src/StringBuffer.ts",
+        "test/compiler_test.ts",
         "test/protocols_test.ts",
         "test/reader_test.ts",
         "typings/assertion-error/assertion-error.d.ts",

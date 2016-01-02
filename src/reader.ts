@@ -5,6 +5,7 @@ import {ArraySeq} from './data/ArraySeq';
 import {ArrayVector} from './data/ArrayVector';
 import {ArrayMap} from './data/ArrayMap';
 import {ArraySet} from './data/ArraySet';
+import * as s from './specials'
 
 const EOF = "";
 
@@ -249,20 +250,20 @@ class LispReader {
       return this.nextForm();
     case "'":
       this.nextChar(true);
-      return d.list(d.ident('vimes.core/quote'), this.nextForm());
+      return d.list(s.QUOTE, this.nextForm());
     case "`":
       this.nextChar(true);
-      return d.list(d.ident('vimes.core/syntax-quote'), this.nextForm());
+      return d.list(s.SYNTAX_QUOTE, this.nextForm());
     case "~":
       this.nextChar(true);
       if (this.char === '@') {
         this.nextChar();
-        return d.list(d.ident('vimes.core/unquote-splicing'), this.nextForm());
+        return d.list(s.UNQUOTE_SPLICING, this.nextForm());
       }
-      return d.list(d.ident('vimes.core/unquote'), this.nextForm());
+      return d.list(s.UNQUOTE, this.nextForm());
     case "!":
       this.nextChar(true);
-      return d.list(d.ident('vimes.core/derivation'), this.nextForm());
+      return d.list(s.DERIVATION, this.nextForm());
     case "\\":
       return this._readChar();
     case "^":
@@ -271,7 +272,7 @@ class LispReader {
       if (meta instanceof Keyword) {
         meta = d.hashMap(meta, true);
       }
-      return d.list(d.ident('vimes.core/with-meta'), this.nextForm(), meta);
+      return d.list(s.WITH_META, this.nextForm());
     case "#":
       this.nextChar(true);
       switch (this.char) {
@@ -280,10 +281,10 @@ class LispReader {
       case '{':
         return this._readSet();
       case '(':
-        return d.list(d.ident('vimes.core/lambda*'), this._readList());
+        return d.list(s.LAMBDA, this.nextForm());
       case '=':
         this.nextChar(true);
-        return d.list(d.ident('vimes.core/read-eval'), this.nextForm());
+        return d.list(s.READ_EVAL, this.nextForm());
       case '_':
         this.nextChar(true);
         this.nextForm();

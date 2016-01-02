@@ -10,6 +10,14 @@ export interface Seq<T> extends Seqable<T> {
   rest(): Seq<T>;
 }
 
+export interface Counted {
+  count(): number;
+}
+
+export interface Nth<T> {
+  nth(n: number): T;
+}
+
 export module Seq {
   export function toString(seq: Seq<any>, left?, right?, between?): string {
     left = left == null ? '(' : left;
