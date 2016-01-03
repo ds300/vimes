@@ -1,14 +1,23 @@
+import {Ident} from "./data/Ident";
 import * as s from './specials';
 import { ArraySeq } from './data/ArraySeq';
-import { StringBuffer } from './StringBuffer'
 import { gensym } from './gensym'
 import { Env } from './env'
 import {show} from './data/proto'
 
+function _compileSeq(seq, env: Env): [string, string] {
+  const count = seq.count();
+  if (count === 0) return [null, env.resolve(s.LIST) + "()"];
+
+}
 
 function _compile(form, env: Env): [string, string] {
   if (form == null) return [null, 'null'];
-  if (form instanceof ArraySeq) {
+  if (form instanceof Ident) {
+    if (form.namespace === null) {
+      const local = env.locals.get(form);
+    }
+  } else if (form instanceof ArraySeq) {
     switch (form.first()) {
     case s.IF: {
       const arity = form.count();
