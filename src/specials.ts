@@ -9,6 +9,7 @@ const k = k => keyword(ns + '/' + k).intern();
 export const IF = n('if');
 export const FN = n('fn');
 export const DO = n('do');
+export const DEF = n('def');
 export const LOOP = n('loop*');
 export const RECUR = n('recur');
 export const DOT = n('.');

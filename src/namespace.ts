@@ -46,6 +46,7 @@ export class Namespace {
 
   constructor (name: string, coreExclusions?: any) {
     this.name = name;
+    this.names = {};
     this.module = {};
     this.meta = {};
     this.referred = {};

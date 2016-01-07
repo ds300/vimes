@@ -23,7 +23,6 @@
     ],
     "files": [
         "src/compiler.ts",
-        "src/core.ts",
         "src/data.ts",
         "src/data/ArrayMap.ts",
         "src/data/ArraySeq.ts",
@@ -34,6 +33,7 @@
         "src/data/interfaces.ts",
         "src/data/Keyword.ts",
         "src/data/proto.ts",
+        "src/data/Var.ts",
         "src/env.ts",
         "src/gensym.ts",
         "src/is.ts",

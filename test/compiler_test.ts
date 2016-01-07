@@ -25,6 +25,10 @@ describe('the compiler', () => {
     const stuff = d.list(s.DO, 4, five);
     console.log(compile(ENV, stuff));
   });
+  it('interns values', () => {
+    const five = d.list(s.DEF, d.ident('five'), 5);
+    console.log(compile(ENV, five));
+  });
   it('evals primitives', () => {
     const stuff = evaluate(ENV, [null, "__vimes_env__.read('4')"]);
     expect(stuff).to.eql(4);
