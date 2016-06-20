@@ -4,8 +4,8 @@
   "description": "gradually typed lisp compiling to js",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "test": "mocha --require source-map-support/register build/test"
+    "build": "node_modules/.bin/tsc",
+    "test": "node_modules/.bin/mocha --require source-map-support/register build/test"
   },
   "author": "",
   "license": "ISC",
@@ -13,7 +13,8 @@
     "chai": "^3.4.1",
     "mocha": "^2.3.4",
     "ramda": "^0.19.0",
-    "source-map-support": "^0.4.0"
+    "source-map-support": "^0.4.0",
+    "typescript": "^1.8.10"
   },
   "dependencies": {
     "immutable": "^3.7.6"

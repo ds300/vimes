@@ -2,8 +2,8 @@ import {Map} from "immutable";
 import {Ident} from "./data/Ident";
 import * as s from './specials'
 
-function sanitize (name: string): string {
-  return name.replace(/\W/g, '_');
+export function sanitize (name: string): string {
+  return name.replace(/[^\w\$]/g, '_');
 }
 
 function sanitizeAndQualify(name, context) {

@@ -1,22 +1,50 @@
-import {core} from "./core";
+// import {core} from "./core";
 import {read} from "./reader";
 import {Ident} from "./data/Ident";
 import {ident} from "./data"
 import {Map} from "immutable";
-import {Namespace} from "./namespace";
+import {Namespace, sanitize} from "./namespace";
+
+export class LocalsStack {
+  below: LocalsStack;
+  ident2sanitized: Map<Ident, string>;
+  sanitized2Ident: Map<string, Ident>;
+  constructor(below: LocalsStack) {
+    if (below != null) {
+      this.ident2sanitized = below.ident2sanitized.asImmutable().asMutable();
+      this.sanitized2Ident = below.sanitized2Ident.asImmutable().asMutable();
+    } else {
+      this.ident2sanitized = Map<Ident, string>().asMutable();
+      this.sanitized2Ident = Map<string, Ident>().asMutable();
+    }
+    this.below = below;
+  }
+
+  setBinding(ident: Ident): string {
+    const _sanitized = sanitize(ident.name);
+    let sanitized = _sanitized;
+    let i = 0;
+    while (this.sanitized2Ident.get(sanitized) === ident) {
+      sanitized = _sanitized + "_" + i;
+    }
+    this.ident2sanitized.set(ident, sanitized);
+    this.sanitized2Ident.set(sanitized, ident);
+    return sanitized;
+  }
+}
 
 export class Env {
   binding: string;
 
   namespaces: {[key: string]: Namespace}
   ns: Namespace;
-  locals: Map<string, string>;
+  locals: LocalsStack;
 
   constructor(binding: string) {
     this.binding = binding;
     this.namespaces = {};
     this.setNamespace(ident("user"));
-    this.locals = Map<Ident, string>();
+    this.locals = new LocalsStack(null);
   }
 
   loadNS(nsName: string): Namespace {
@@ -58,11 +86,15 @@ export class Env {
     return this.ns.qualify(ident).intern();
   }
 
-  setLocalBindings(map: Map<string, string>): Map<string, string> {
-    const current = this.locals;
-    this.locals = map;
-    return current;
+  pushLocals() {
+    this.locals = new LocalsStack(this.locals);
   }
+
+  popLocals() {
+    this.locals = this.locals.below;
+  }
+
+
 }
 
 export const ENV = new Env("__vimes_env__");

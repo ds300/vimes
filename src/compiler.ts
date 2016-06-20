@@ -1,9 +1,10 @@
 import {Ident} from "./data/Ident";
 import * as s from './specials';
 import { ArraySeq } from './data/ArraySeq';
-import { gensym } from './gensym'
-import { Env } from './env'
-import {show} from './data/proto'
+import { ArrayVector } from './data/ArrayVector';
+import { gensym } from './gensym';
+import { Env } from './env';
+import {show} from './data/proto';
 
 function _compileIf(seq, env: Env): [string, string] {
   const arity = seq.count();
@@ -42,10 +43,10 @@ function _compileDo(seq, env: Env): [string, string] {
   let stmt = '';
   let [lastStmt, lastExpr] = [null, 'null'];
   while ((seq = seq.seq()) != null) {
+    if (lastStmt !== null) {
+      stmt += lastStmt;
+    }
     if (lastExpr !== 'null') {
-      if (lastStmt !== null) {
-        stmt += lastStmt;
-      }
       stmt += lastExpr + ";\n";
     }
     [lastStmt, lastExpr] = _compile(seq.first(), env);
@@ -60,7 +61,7 @@ function _compileDo(seq, env: Env): [string, string] {
 function _compileDef(seq, env: Env): [string, string] {
   const ident = seq.nth(1);
   if (!(ident instanceof Ident)) {
-    throw new Error('second argument to def should be an ident');
+    throw new Error('first argument to def should be an ident');
   } else if (ident.namespace) {
     throw new Error(`can't intern qualified ident`);
   } else if (seq.count() !== 3) {
@@ -80,7 +81,75 @@ function _compileDef(seq, env: Env): [string, string] {
 }
 
 function _compileIdentCallsite(seq, env: Env): [string, string] {
-  return [null, null];
+  const fnIdent = seq.first();
+  const resolved = env.resolve(fnIdent);
+
+  let stmt = '';
+  let argExprs = [];
+
+  seq = seq.rest().seq();
+
+  while (seq != null) {
+    let [nextStmt, nextArgExpr] = _compile(seq.first(), env);
+    if (nextStmt !== null) {
+      stmt += nextStmt;
+    }
+    argExprs.push(nextArgExpr);
+    seq = seq.rest().seq();
+  }
+
+  return [stmt || null, resolved + `(${argExprs.join(', ')})`];
+}
+
+function _compileFn(seq, env: Env): [string, string] {
+  seq = seq.rest().seq();
+
+  if (seq == null) {
+    throw new Error('expecting arg vector');
+  }
+  
+  let second = seq.first();
+  if (second instanceof Ident) {
+    // dunno
+    seq = seq.rest().seq();
+    second = seq.first();
+  }
+
+  // seq should be vector for params
+  // do multi-arity laters
+  if (!(second instanceof ArrayVector)) {
+    throw new Error('yo this should be a vector?!');
+  }
+
+  const identParams = second.array;
+  const sanitizedParams = [];
+
+  env.pushLocals();
+
+  for (let i = 0; i < identParams.length; i++) {
+    const ident = identParams[i];
+    // make sure all idents
+    if (!(ident instanceof Ident)) {
+      throw new Error('expecting ident');
+    }
+    // make sure no namespace
+    if (ident.namespace != null) {
+      throw new Error("can't use qualified idents for function parameter names");
+    }
+    // make sure no duplicates
+    if (identParams.indexOf(ident, i+1) !== -1) {
+      throw new Error('duplicate parameter name')
+    }
+
+    sanitizedParams.push(env.locals.setBinding(ident));
+  }
+
+  // todo: function name
+  const [bodyStmt, bodyExpr] = _compileDo(seq, env);
+
+  env.popLocals();
+
+  return [null, `function (${sanitizedParams.join(', ')}) {\n${bodyStmt}\nreturn ${bodyExpr};\n}`];
 }
 
 function _compileSeq(seq, env: Env): [string, string] {
@@ -92,6 +161,7 @@ function _compileSeq(seq, env: Env): [string, string] {
     case s.IF: return _compileIf(seq, env);
     case s.DO: return _compileDo(seq, env);
     case s.DEF: return _compileDef(seq, env);
+    case s.FN: return _compileFn(seq, env);
     case s.QUOTE:
       return [null, `__vimes_env__.read(${JSON.stringify(show(seq.nth(1)))})`];
     default: return _compileIdentCallsite(seq, env);

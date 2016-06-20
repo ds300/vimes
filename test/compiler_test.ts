@@ -33,4 +33,12 @@ describe('the compiler', () => {
     const stuff = evaluate(ENV, [null, "__vimes_env__.read('4')"]);
     expect(stuff).to.eql(4);
   });
+  it('compiles function calls', () => {
+    const five = d.list(d.ident('five'), 5, true, false);
+    console.log(compile(ENV, five));
+  });
+  it('compiles function literals', () => {
+    const f = d.list(s.FN, d.vector(d.ident('a'), d.ident('b')), 4, null, 5, false);
+    console.log(compile(ENV, f))
+  });
 });
